@@ -138,7 +138,7 @@ export default function HouseholdPage() {
             </div>
 
             {/* 우측: 잔액 정보 */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pr-2">
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="text-muted-foreground">
                   {balance.openingBalance.toLocaleString()}
@@ -150,7 +150,7 @@ export default function HouseholdPage() {
                   -{balance.monthlyExpense.toLocaleString()}
                 </span>
               </div>
-              <span className="text-4xl font-bold text-blue-600">
+              <span className="text-3xl font-bold text-blue-600">
                 {balance.closingBalance.toLocaleString()}
               </span>
             </div>
