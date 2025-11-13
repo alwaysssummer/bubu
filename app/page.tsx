@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Copy, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import type { Household } from '@/lib/types';
 
 export default function HomePage() {
@@ -137,6 +137,11 @@ export default function HomePage() {
     }
   };
 
+  const handleOpenNewTab = (householdId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`/${householdId}`, '_blank');
+  };
+
   const handleCopyLink = async (householdId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -193,6 +198,15 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => handleOpenNewTab(household.id, e)}
+                            title="새창 열기"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
