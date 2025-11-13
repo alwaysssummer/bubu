@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-const FIXED_HOUSEHOLD_ID = 'my-household';
+// 고정 UUID (실제 UUID 형식을 사용하여 Supabase 호환성 보장)
+const FIXED_HOUSEHOLD_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function HomePage() {
   const router = useRouter();
