@@ -95,12 +95,15 @@ export default function BudgetPage() {
 
   const handleToggleCheck = async (item: BudgetItem) => {
     try {
+      // @ts-ignore
       const { error } = await supabase
         .from('budget_items')
         .update({ is_checked: !item.is_checked })
         .eq('id', item.id);
 
       if (error) throw error;
+      // 즉시 목록 새로고침
+      fetchBudgetItems();
     } catch (error) {
       console.error('Error toggling check:', error);
       toast.error('체크 변경에 실패했습니다.');
@@ -128,6 +131,8 @@ export default function BudgetPage() {
 
       if (error) throw error;
       toast.success('항목이 삭제되었습니다.');
+      // 즉시 목록 새로고침
+      fetchBudgetItems();
     } catch (error) {
       console.error('Error deleting budget item:', error);
       toast.error('항목 삭제에 실패했습니다.');

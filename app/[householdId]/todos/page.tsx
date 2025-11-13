@@ -83,6 +83,8 @@ export default function TodosPage() {
 
       if (error) throw error;
       toast.success(todo.is_completed ? '할일이 다시 활성화되었습니다.' : '할일이 완료되었습니다.');
+      // 즉시 목록 새로고침
+      fetchTodos();
     } catch (error) {
       console.error('Error toggling todo:', error);
       toast.error('처리에 실패했습니다.');
@@ -97,6 +99,8 @@ export default function TodosPage() {
 
       if (error) throw error;
       toast.success('할일이 삭제되었습니다.');
+      // 즉시 목록 새로고침
+      fetchTodos();
     } catch (error) {
       console.error('Error deleting todo:', error);
       toast.error('할일 삭제에 실패했습니다.');

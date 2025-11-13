@@ -37,7 +37,7 @@ export default function HouseholdPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
-  const { transactions, loading } = useTransactions(householdId, currentMonth);
+  const { transactions, loading, refetch } = useTransactions(householdId, currentMonth);
   const balance = useMonthlyBalance(householdId, currentMonth, transactions);
 
   const goToPrevMonth = () => {
@@ -80,6 +80,8 @@ export default function HouseholdPage() {
 
       if (error) throw error;
       toast.success('거래가 삭제되었습니다.');
+      // 즉시 목록 새로고침
+      refetch();
     } catch (error) {
       console.error('Error deleting transaction:', error);
       toast.error('거래 삭제에 실패했습니다.');
