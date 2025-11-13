@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { Copy, Pencil, Trash2 } from 'lucide-react';
 import type { Household } from '@/lib/types';
 
 export default function HomePage() {
@@ -20,6 +22,12 @@ export default function HomePage() {
   const [person1Name, setPerson1Name] = useState('남편');
   const [person2Name, setPerson2Name] = useState('아내');
   const [existingId, setExistingId] = useState('');
+  
+  // 수정 다이얼로그 상태
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
+  const [editPerson1, setEditPerson1] = useState('');
+  const [editPerson2, setEditPerson2] = useState('');
 
   useEffect(() => {
     fetchHouseholds();
@@ -75,6 +83,74 @@ export default function HomePage() {
     router.push(`/${existingId.trim()}`);
   };
 
+  const handleEditOpen = (household: Household, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingHousehold(household);
+    setEditPerson1(household.person1_name);
+    setEditPerson2(household.person2_name);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingHousehold) return;
+    
+    try {
+      const { error } = await supabase
+        .from('household')
+        .update({
+          person1_name: editPerson1,
+          person2_name: editPerson2,
+        })
+        .eq('id', editingHousehold.id);
+
+      if (error) throw error;
+
+      toast.success('가계부 이름이 수정되었습니다.');
+      setEditDialogOpen(false);
+      fetchHouseholds();
+    } catch (error) {
+      console.error('Error updating household:', error);
+      toast.error('수정에 실패했습니다.');
+    }
+  };
+
+  const handleDelete = async (household: Household, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm(`${household.person1_name} & ${household.person2_name} 가계부를 삭제하시겠습니까?\n\n⚠️ 모든 거래 내역, 예산, 할일이 함께 삭제됩니다.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('household')
+        .delete()
+        .eq('id', household.id);
+
+      if (error) throw error;
+
+      toast.success('가계부가 삭제되었습니다.');
+      fetchHouseholds();
+    } catch (error) {
+      console.error('Error deleting household:', error);
+      toast.error('삭제에 실패했습니다.');
+    }
+  };
+
+  const handleCopyLink = async (householdId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const url = `${window.location.origin}/${householdId}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('링크가 복사되었습니다!');
+    } catch (error) {
+      console.error('Error copying link:', error);
+      toast.error('링크 복사에 실패했습니다.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/20">
       <div className="w-full max-w-md space-y-6">
@@ -100,18 +176,53 @@ export default function HomePage() {
               ) : (
                 <div className="space-y-2">
                   {households.map((household) => (
-                    <button
+                    <div
                       key={household.id}
-                      onClick={() => router.push(`/${household.id}`)}
-                      className="w-full p-3 text-left border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="w-full p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
-                      <div className="font-medium">
-                        {household.person1_name} & {household.person2_name}
+                      <div 
+                        className="flex items-start justify-between cursor-pointer"
+                        onClick={() => router.push(`/${household.id}`)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {household.person1_name} & {household.person2_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(household.created_at), 'yyyy년 M월 d일', { locale: ko })} 생성
+                          </div>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => handleCopyLink(household.id, e)}
+                            title="링크 복사"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => handleEditOpen(household, e)}
+                            title="이름 수정"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            onClick={(e) => handleDelete(household, e)}
+                            title="삭제"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(household.created_at), 'yyyy년 M월 d일', { locale: ko })} 생성
-                      </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -189,6 +300,55 @@ export default function HomePage() {
           <p className="mt-1">링크를 아는 사람은 누구나 접근 가능합니다</p>
         </div>
       </div>
+
+      {/* 이름 수정 다이얼로그 */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>가계부 이름 수정</DialogTitle>
+            <DialogDescription>
+              가계부 이름을 변경하세요
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-person1">첫 번째 사람</Label>
+                <Input
+                  id="edit-person1"
+                  value={editPerson1}
+                  onChange={(e) => setEditPerson1(e.target.value)}
+                  placeholder="남편"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-person2">두 번째 사람</Label>
+                <Input
+                  id="edit-person2"
+                  value={editPerson2}
+                  onChange={(e) => setEditPerson2(e.target.value)}
+                  placeholder="아내"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditDialogOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleEditSave}
+              >
+                저장
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
