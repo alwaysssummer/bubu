@@ -455,9 +455,9 @@ export default function HouseholdPage() {
         <CategoryAnalysis householdId={householdId} currentMonth={currentMonth} />
       </Suspense>
 
-      {/* Floating Add Button */}
+      {/* Center Add Button */}
       <Button
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full shadow-lg z-50"
         size="icon"
         onClick={handleAddNew}
       >

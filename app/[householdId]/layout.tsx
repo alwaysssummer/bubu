@@ -3,7 +3,7 @@
 import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Copy, Home, ListChecks, CheckSquare } from 'lucide-react';
+import { Copy, Home, ListChecks, CheckSquare, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HouseholdLayout({
@@ -38,12 +38,6 @@ export default function HouseholdLayout({
       icon: ListChecks,
       isActive: pathname === `/${householdId}/budget`,
     },
-    {
-      name: '할일',
-      href: `/${householdId}/todos`,
-      icon: CheckSquare,
-      isActive: pathname === `/${householdId}/todos`,
-    },
   ];
 
   return (
@@ -53,25 +47,34 @@ export default function HouseholdLayout({
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-around h-16">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                    tab.isActive
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-5 w-5 mb-1" />
-                  <span className="text-xs font-medium">{tab.name}</span>
-                </Link>
-              );
-            })}
+        <div className="container mx-auto">
+          <div className="flex items-center justify-center gap-8 h-16">
+            <Link
+              href={`/${householdId}`}
+              className={`flex flex-col items-center justify-center transition-colors ${
+                pathname === `/${householdId}`
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Home className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">가계부</span>
+            </Link>
+
+            {/* Center Add Button - Will be handled by page */}
+            <div className="w-12 h-12" />
+
+            <Link
+              href={`/${householdId}/budget`}
+              className={`flex flex-col items-center justify-center transition-colors ${
+                pathname === `/${householdId}/budget`
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ListChecks className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">예산</span>
+            </Link>
           </div>
         </div>
       </nav>
