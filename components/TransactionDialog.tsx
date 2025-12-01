@@ -139,6 +139,16 @@ export function TransactionDialog({
             </Tabs>
           </div>
 
+          {/* Category */}
+          <div className="space-y-2">
+            <Label htmlFor="category">항목</Label>
+            <CategoryCombobox
+              householdId={householdId}
+              value={category}
+              onChange={setCategory}
+            />
+          </div>
+
           {/* Amount */}
           <div className="space-y-2">
             <Label htmlFor="amount">금액</Label>
@@ -156,16 +166,6 @@ export function TransactionDialog({
                 만원
               </span>
             </div>
-          </div>
-
-          {/* Category */}
-          <div className="space-y-2">
-            <Label htmlFor="category">항목</Label>
-            <CategoryCombobox
-              householdId={householdId}
-              value={category}
-              onChange={setCategory}
-            />
           </div>
 
           {/* Date */}
