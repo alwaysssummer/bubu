@@ -37,8 +37,8 @@ export default function BudgetPage() {
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
   useEffect(() => {
-    // 반복 항목 복사 후 데이터 로드
-    copyRecurringItemsFromPreviousMonth().then(() => {
+    // 이전 달 항목 복사 후 데이터 로드
+    copyItemsFromPreviousMonth().then(() => {
       fetchBudgetItems();
     });
 
@@ -64,7 +64,7 @@ export default function BudgetPage() {
     };
   }, [householdId, currentMonth]);
 
-  async function copyRecurringItemsFromPreviousMonth() {
+  async function copyItemsFromPreviousMonth() {
     try {
       // 이전 달 계산
       const [year, month] = currentMonth.split('-').map(Number);
@@ -81,98 +81,71 @@ export default function BudgetPage() {
 
       if (existingError) throw existingError;
 
-      const existingTitles = new Set(
-        (existingItems || []).map((item) => item.title)
-      );
+      // 이미 현재 달에 항목이 하나라도 있으면 복사하지 않음 (이미 처리됨)
+      if (existingItems && existingItems.length > 0) {
+        return;
+      }
 
-      const itemsToCopy: any[] = [];
-
-      // 1. 이전 달의 반복 항목 조회 (is_recurring: true)
-      const { data: recurringItems, error: recurringError } = await supabase
+      // 이전 달의 모든 항목 조회
+      const { data: prevItems, error: prevError } = await supabase
         .from('budget_items')
         .select('*')
         .eq('household_id', householdId)
-        .eq('month', prevMonthStr)
-        .eq('is_recurring', true);
+        .eq('month', prevMonthStr);
 
-      if (recurringError) throw recurringError;
+      if (prevError) throw prevError;
 
-      if (recurringItems && recurringItems.length > 0) {
-        // 중복되지 않은 반복 항목만 복사
-        const recurringToCopy = recurringItems
-          .filter((item) => !existingTitles.has(item.title))
-          .map((item) => ({
+      if (!prevItems || prevItems.length === 0) {
+        return;
+      }
+
+      const itemsToCopy: any[] = [];
+
+      for (const item of prevItems) {
+        // "(전월)"이 이미 붙은 항목은 제외 (이월 항목의 재이월 방지)
+        if (item.title.includes('(전월)')) {
+          continue;
+        }
+
+        if (item.is_recurring) {
+          // 1. 반복 항목: 그대로 복사
+          itemsToCopy.push({
             household_id: item.household_id,
             type: item.type,
             title: item.title,
             amount: item.amount,
-            is_recurring: item.is_recurring,
+            is_recurring: true,
             is_checked: false,
             month: currentMonth,
             due_date: item.due_date,
-          }));
-
-        itemsToCopy.push(...recurringToCopy);
-        
-        if (recurringToCopy.length > 0) {
-          console.log(`✅ ${recurringToCopy.length}개의 반복 예산 항목이 복사되었습니다.`);
-        }
-      }
-
-      // 2. 이전 달의 미체크 항목 조회 (is_checked: false AND is_recurring: false)
-      // 반복 항목은 이미 위에서 복사했으므로 제외
-      const { data: uncheckedItems, error: uncheckedError } = await supabase
-        .from('budget_items')
-        .select('*')
-        .eq('household_id', householdId)
-        .eq('month', prevMonthStr)
-        .eq('is_checked', false)
-        .eq('is_recurring', false);
-
-      if (uncheckedError) throw uncheckedError;
-
-      if (uncheckedItems && uncheckedItems.length > 0) {
-        // 미체크 항목을 "(전월)" 붙여서 복사
-        const uncheckedToCopy = uncheckedItems
-          .map((item) => {
-            const newTitle = `${item.title}(전월)`;
-            return newTitle;
-          })
-          .filter((newTitle) => !existingTitles.has(newTitle))
-          .map((newTitle, index) => {
-            const originalItem = uncheckedItems.find(
-              (item) => `${item.title}(전월)` === newTitle
-            )!;
-            return {
-              household_id: originalItem.household_id,
-              type: originalItem.type,
-              title: newTitle,
-              amount: originalItem.amount,
-              is_recurring: false, // 이월 항목은 반복 아님
-              is_checked: false,
-              month: currentMonth,
-              due_date: originalItem.due_date,
-            };
           });
-
-        itemsToCopy.push(...uncheckedToCopy);
-        
-        if (uncheckedToCopy.length > 0) {
-          console.log(`✅ ${uncheckedToCopy.length}개의 미체크 예산 항목이 이월되었습니다.`);
+        } else if (!item.is_checked) {
+          // 2. 일반 항목 중 미체크: "(전월)" 붙여서 이월
+          itemsToCopy.push({
+            household_id: item.household_id,
+            type: item.type,
+            title: `${item.title}(전월)`,
+            amount: item.amount,
+            is_recurring: false,
+            is_checked: false,
+            month: currentMonth,
+            due_date: item.due_date,
+          });
         }
+        // 3. 일반 항목 중 체크됨: 복사 안함 (완료된 항목)
       }
 
-      // 3. 모든 복사할 항목을 한 번에 삽입
+      // 모든 복사할 항목을 한 번에 삽입
       if (itemsToCopy.length > 0) {
         const { error: insertError } = await supabase
           .from('budget_items')
           .insert(itemsToCopy);
 
         if (insertError) throw insertError;
+        console.log(`✅ ${itemsToCopy.length}개의 예산 항목이 복사되었습니다.`);
       }
     } catch (error) {
       console.error('Error copying items from previous month:', error);
-      // 에러가 발생해도 계속 진행 (토스트는 표시하지 않음)
     }
   }
 
