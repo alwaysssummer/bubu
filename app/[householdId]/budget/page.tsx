@@ -72,21 +72,7 @@ export default function BudgetPage() {
       const prevYear = month === 1 ? year - 1 : year;
       const prevMonthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
 
-      // 이전 달의 반복 항목 조회
-      const { data: recurringItems, error: fetchError } = await supabase
-        .from('budget_items')
-        .select('*')
-        .eq('household_id', householdId)
-        .eq('month', prevMonthStr)
-        .eq('is_recurring', true);
-
-      if (fetchError) throw fetchError;
-
-      if (!recurringItems || recurringItems.length === 0) {
-        return; // 반복 항목이 없으면 종료
-      }
-
-      // 현재 달의 기존 항목 조회 (중복 방지)
+      // 현재 달의 기존 항목 조회 (중복 방지용)
       const { data: existingItems, error: existingError } = await supabase
         .from('budget_items')
         .select('*')
@@ -99,31 +85,91 @@ export default function BudgetPage() {
         (existingItems || []).map((item) => item.title)
       );
 
-      // 중복되지 않은 항목만 복사
-      const itemsToCopy = recurringItems
-        .filter((item) => !existingTitles.has(item.title))
-        .map((item) => ({
-          household_id: item.household_id,
-          type: item.type,
-          title: item.title,
-          amount: item.amount,
-          is_recurring: item.is_recurring,
-          is_checked: false, // 체크 상태는 초기화
-          month: currentMonth,
-          due_date: item.due_date,
-        }));
+      const itemsToCopy: any[] = [];
 
+      // 1. 이전 달의 반복 항목 조회 (is_recurring: true)
+      const { data: recurringItems, error: recurringError } = await supabase
+        .from('budget_items')
+        .select('*')
+        .eq('household_id', householdId)
+        .eq('month', prevMonthStr)
+        .eq('is_recurring', true);
+
+      if (recurringError) throw recurringError;
+
+      if (recurringItems && recurringItems.length > 0) {
+        // 중복되지 않은 반복 항목만 복사
+        const recurringToCopy = recurringItems
+          .filter((item) => !existingTitles.has(item.title))
+          .map((item) => ({
+            household_id: item.household_id,
+            type: item.type,
+            title: item.title,
+            amount: item.amount,
+            is_recurring: item.is_recurring,
+            is_checked: false,
+            month: currentMonth,
+            due_date: item.due_date,
+          }));
+
+        itemsToCopy.push(...recurringToCopy);
+        
+        if (recurringToCopy.length > 0) {
+          console.log(`✅ ${recurringToCopy.length}개의 반복 예산 항목이 복사되었습니다.`);
+        }
+      }
+
+      // 2. 이전 달의 미체크 항목 조회 (is_checked: false)
+      const { data: uncheckedItems, error: uncheckedError } = await supabase
+        .from('budget_items')
+        .select('*')
+        .eq('household_id', householdId)
+        .eq('month', prevMonthStr)
+        .eq('is_checked', false);
+
+      if (uncheckedError) throw uncheckedError;
+
+      if (uncheckedItems && uncheckedItems.length > 0) {
+        // 미체크 항목을 "(전월)" 붙여서 복사
+        const uncheckedToCopy = uncheckedItems
+          .map((item) => {
+            const newTitle = `${item.title}(전월)`;
+            return newTitle;
+          })
+          .filter((newTitle) => !existingTitles.has(newTitle))
+          .map((newTitle, index) => {
+            const originalItem = uncheckedItems.find(
+              (item) => `${item.title}(전월)` === newTitle
+            )!;
+            return {
+              household_id: originalItem.household_id,
+              type: originalItem.type,
+              title: newTitle,
+              amount: originalItem.amount,
+              is_recurring: false, // 이월 항목은 반복 아님
+              is_checked: false,
+              month: currentMonth,
+              due_date: originalItem.due_date,
+            };
+          });
+
+        itemsToCopy.push(...uncheckedToCopy);
+        
+        if (uncheckedToCopy.length > 0) {
+          console.log(`✅ ${uncheckedToCopy.length}개의 미체크 예산 항목이 이월되었습니다.`);
+        }
+      }
+
+      // 3. 모든 복사할 항목을 한 번에 삽입
       if (itemsToCopy.length > 0) {
         const { error: insertError } = await supabase
           .from('budget_items')
           .insert(itemsToCopy);
 
         if (insertError) throw insertError;
-        
-        console.log(`✅ ${itemsToCopy.length}개의 반복 예산 항목이 복사되었습니다.`);
       }
     } catch (error) {
-      console.error('Error copying recurring items:', error);
+      console.error('Error copying items from previous month:', error);
       // 에러가 발생해도 계속 진행 (토스트는 표시하지 않음)
     }
   }
