@@ -119,13 +119,15 @@ export default function BudgetPage() {
         }
       }
 
-      // 2. 이전 달의 미체크 항목 조회 (is_checked: false)
+      // 2. 이전 달의 미체크 항목 조회 (is_checked: false AND is_recurring: false)
+      // 반복 항목은 이미 위에서 복사했으므로 제외
       const { data: uncheckedItems, error: uncheckedError } = await supabase
         .from('budget_items')
         .select('*')
         .eq('household_id', householdId)
         .eq('month', prevMonthStr)
-        .eq('is_checked', false);
+        .eq('is_checked', false)
+        .eq('is_recurring', false);
 
       if (uncheckedError) throw uncheckedError;
 
