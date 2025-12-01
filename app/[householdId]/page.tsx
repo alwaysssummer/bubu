@@ -237,11 +237,11 @@ export default function HouseholdPage() {
   const completedTodos = todos.filter(t => t.is_completed);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-2 max-w-2xl mx-auto">
       {/* Month Navigation + Balance Card */}
       <Card>
-        <CardContent className="px-3 py-0.5">
-          <div className="flex items-center justify-between gap-4">
+        <CardContent className="px-2 py-0.5">
+          <div className="flex items-center justify-between gap-2">
             {/* 좌측: 월 네비게이션 */}
             <div className="flex items-center gap-1">
               <Button 
@@ -288,19 +288,19 @@ export default function HouseholdPage() {
 
       {/* 할일 목록 */}
       <Card className="pt-0">
-        <CardContent className="p-3 space-y-2">
+        <CardContent className="p-2 space-y-1">
           {/* 빠른 입력 */}
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <Input
               placeholder="할일 입력 후 Enter"
               value={newTodoTitle}
               onChange={(e) => setNewTodoTitle(e.target.value)}
               onKeyDown={handleQuickAddTodo}
-              className="h-8 text-sm"
+              className="h-7 text-xs"
             />
             <Button
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
               onClick={() => {
                 if (newTodoTitle.trim()) {
                   const e = { key: 'Enter' } as React.KeyboardEvent<HTMLInputElement>;
@@ -317,7 +317,7 @@ export default function HouseholdPage() {
             {incompleteTodos.map((todo) => (
               <div
                 key={todo.id}
-                className="flex items-center gap-2 py-1 px-2 hover:bg-muted/50 rounded-md transition-colors"
+                className="flex items-center gap-1.5 py-0.5 px-1.5 hover:bg-muted/50 rounded-md transition-colors"
               >
                 <button onClick={() => handleToggleComplete(todo)}>
                   <Circle className="h-4 w-4 text-muted-foreground" />
@@ -350,7 +350,7 @@ export default function HouseholdPage() {
             {completedTodos.map((todo) => (
               <div
                 key={todo.id}
-                className="flex items-center gap-2 py-1 px-2 hover:bg-muted/50 rounded-md transition-colors opacity-50"
+                className="flex items-center gap-1.5 py-0.5 px-1.5 hover:bg-muted/50 rounded-md transition-colors opacity-50"
               >
                 <button onClick={() => handleToggleComplete(todo)}>
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
