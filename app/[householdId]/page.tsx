@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 import { useTransactions } from '@/lib/hooks/useTransactions';
 import { useMonthlyBalance } from '@/lib/hooks/useMonthlyBalance';
 import { TransactionDialog } from '@/components/TransactionDialog';
+import { TodoDialog } from '@/components/TodoDialog';
 import { MonthlyChart } from '@/components/MonthlyChart';
 import { CategoryAnalysis } from '@/components/CategoryAnalysis';
 import {
@@ -21,7 +24,7 @@ import {
 } from '@/components/LoadingSkeletons';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import type { Transaction } from '@/lib/types';
+import type { Transaction, Todo } from '@/lib/types';
 
 export default function HouseholdPage() {
   const params = useParams();
@@ -37,8 +40,55 @@ export default function HouseholdPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
+  // Todo states
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todoDialogOpen, setTodoDialogOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
+
   const { transactions, loading, refetch } = useTransactions(householdId, currentMonth);
   const balance = useMonthlyBalance(householdId, currentMonth, transactions);
+
+  // Fetch todos
+  useEffect(() => {
+    fetchTodos();
+
+    const channel = supabase
+      .channel(`todos:${householdId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'todos',
+          filter: `household_id=eq.${householdId}`,
+        },
+        () => {
+          fetchTodos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [householdId]);
+
+  async function fetchTodos() {
+    try {
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('household_id', householdId)
+        .order('is_completed', { ascending: true })
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      setTodos(data || []);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  }
 
   const goToPrevMonth = () => {
     const [year, month] = currentMonth.split('-').map(Number);
@@ -88,6 +138,81 @@ export default function HouseholdPage() {
     }
   };
 
+  // Todo handlers
+  const handleQuickAddTodo = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTodoTitle.trim()) {
+      try {
+        const { error } = await supabase.from('todos').insert([
+          {
+            household_id: householdId,
+            title: newTodoTitle.trim(),
+            requester: '공통',
+            assignee: '공통',
+            due_date: format(new Date(), 'yyyy-MM-dd'),
+            is_completed: false,
+          },
+        ]);
+
+        if (error) throw error;
+        setNewTodoTitle('');
+        fetchTodos();
+      } catch (error) {
+        console.error('Error adding todo:', error);
+        toast.error('추가에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleEditTodo = (todo: Todo) => {
+    setEditingTodo(todo);
+    setTodoDialogOpen(true);
+  };
+
+  const handleToggleComplete = async (todo: Todo) => {
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({
+          is_completed: !todo.is_completed,
+          completed_at: !todo.is_completed ? new Date().toISOString() : null,
+        })
+        .eq('id', todo.id);
+
+      if (error) throw error;
+      fetchTodos();
+    } catch (error) {
+      console.error('Error toggling todo:', error);
+      toast.error('처리에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteTodo = async (id: string) => {
+    if (!confirm('이 할일을 삭제하시겠습니까?')) return;
+
+    try {
+      const { error } = await supabase.from('todos').delete().eq('id', id);
+
+      if (error) throw error;
+      toast.success('할일이 삭제되었습니다.');
+      fetchTodos();
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      toast.error('삭제에 실패했습니다.');
+    }
+  };
+
+  const getDueDateDisplay = (dueDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diff = differenceInDays(due, today);
+
+    if (diff < 0) return `D+${Math.abs(diff)}`;
+    if (diff === 0) return '오늘 마감';
+    return `D-${diff}`;
+  };
+
   if (loading || balance.loading) {
     return (
       <div className="space-y-6 max-w-2xl mx-auto">
@@ -107,6 +232,9 @@ export default function HouseholdPage() {
       </div>
     );
   }
+
+  const incompleteTodos = todos.filter(t => !t.is_completed);
+  const completedTodos = todos.filter(t => t.is_completed);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -154,6 +282,99 @@ export default function HouseholdPage() {
                 {balance.closingBalance.toLocaleString()}
               </span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 할일 목록 */}
+      <Card className="pt-0">
+        <CardContent className="p-3 space-y-2">
+          {/* 빠른 입력 */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="할일 입력 후 Enter"
+              value={newTodoTitle}
+              onChange={(e) => setNewTodoTitle(e.target.value)}
+              onKeyDown={handleQuickAddTodo}
+              className="h-8 text-sm"
+            />
+            <Button
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                if (newTodoTitle.trim()) {
+                  const e = { key: 'Enter' } as React.KeyboardEvent<HTMLInputElement>;
+                  handleQuickAddTodo(e);
+                }
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* 할일 목록 */}
+          <div className="space-y-1">
+            {incompleteTodos.map((todo) => (
+              <div
+                key={todo.id}
+                className="flex items-center gap-2 py-1 px-2 hover:bg-muted/50 rounded-md transition-colors"
+              >
+                <button onClick={() => handleToggleComplete(todo)}>
+                  <Circle className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <span className="text-sm flex-1" onClick={() => handleEditTodo(todo)}>
+                  {todo.title}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {getDueDateDisplay(todo.due_date)}
+                </span>
+                <button
+                  onClick={() => handleEditTodo(todo)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <span className="text-sm">✎</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteTodo(todo.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <span className="text-sm">×</span>
+                </button>
+              </div>
+            ))}
+            
+            {incompleteTodos.length > 0 && completedTodos.length > 0 && (
+              <div className="border-t border-muted my-1" />
+            )}
+            
+            {completedTodos.map((todo) => (
+              <div
+                key={todo.id}
+                className="flex items-center gap-2 py-1 px-2 hover:bg-muted/50 rounded-md transition-colors opacity-50"
+              >
+                <button onClick={() => handleToggleComplete(todo)}>
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                </button>
+                <span className="text-sm flex-1 line-through" onClick={() => handleEditTodo(todo)}>
+                  {todo.title}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {getDueDateDisplay(todo.due_date)}
+                </span>
+                <button
+                  onClick={() => handleEditTodo(todo)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <span className="text-sm">✎</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteTodo(todo.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <span className="text-sm">×</span>
+                </button>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -304,6 +525,14 @@ export default function HouseholdPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Todo Dialog */}
+      <TodoDialog
+        open={todoDialogOpen}
+        onOpenChange={setTodoDialogOpen}
+        householdId={householdId}
+        todo={editingTodo}
+      />
     </div>
   );
 }
