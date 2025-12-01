@@ -108,7 +108,7 @@ export default function BudgetPage() {
         }
 
         if (item.is_recurring) {
-          // 1. 반복 항목: 그대로 복사
+          // 1. 반복 항목: 항상 그대로 복사 (다음 달 예산)
           itemsToCopy.push({
             household_id: item.household_id,
             type: item.type,
@@ -119,8 +119,22 @@ export default function BudgetPage() {
             month: currentMonth,
             due_date: item.due_date,
           });
+
+          // 2. 반복 항목이 미체크면 추가로 "(전월)"도 이월 (미납분)
+          if (!item.is_checked) {
+            itemsToCopy.push({
+              household_id: item.household_id,
+              type: item.type,
+              title: `${item.title}(전월)`,
+              amount: item.amount,
+              is_recurring: false,
+              is_checked: false,
+              month: currentMonth,
+              due_date: item.due_date,
+            });
+          }
         } else if (!item.is_checked) {
-          // 2. 일반 항목 중 미체크: "(전월)" 붙여서 이월
+          // 3. 일반 항목 중 미체크: "(전월)" 붙여서 이월
           itemsToCopy.push({
             household_id: item.household_id,
             type: item.type,
@@ -132,7 +146,7 @@ export default function BudgetPage() {
             due_date: item.due_date,
           });
         }
-        // 3. 일반 항목 중 체크됨: 복사 안함 (완료된 항목)
+        // 4. 일반 항목 중 체크됨: 복사 안함 (완료된 항목)
       }
 
       // 모든 복사할 항목을 한 번에 삽입
