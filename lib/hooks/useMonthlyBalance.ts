@@ -12,26 +12,27 @@ export function useMonthlyBalance(householdId: string, month: string, transactio
 
   async function fetchOpeningBalance() {
     try {
-      // 이전 달의 마감 잔액 조회
-      const [year, monthNum] = month.split('-').map(Number);
-      const prevMonth = monthNum === 1 
-        ? `${year - 1}-12` 
-        : `${year}-${String(monthNum - 1).padStart(2, '0')}`;
+      // 현재 달의 첫 날 (이전 모든 거래 조회용)
+      const currentMonthStart = `${month}-01`;
 
-      const { data, error } = await supabase
-        .from('monthly_balances')
-        .select('closing_balance')
+      // 현재 달 이전의 모든 거래 내역 조회
+      const { data: prevTransactions, error } = await supabase
+        .from('transactions')
+        .select('type, amount')
         .eq('household_id', householdId)
-        .eq('month', prevMonth)
-        .single();
+        .lt('date', currentMonthStart);
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116은 "no rows returned" 에러 (정상)
+      if (error) {
         console.error('❌ Supabase Error:', error);
         throw error;
       }
 
-      setOpeningBalance(data?.closing_balance || 0);
+      // 이전 모든 거래의 누적 잔액 계산
+      const balance = (prevTransactions || []).reduce((sum, t) => {
+        return t.type === 'income' ? sum + t.amount : sum - t.amount;
+      }, 0);
+
+      setOpeningBalance(balance);
     } catch (error) {
       console.error('❌ Error fetching opening balance:', error);
       setOpeningBalance(0);
