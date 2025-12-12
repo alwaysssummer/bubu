@@ -3,7 +3,7 @@
 import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Copy, Home, ListChecks, CheckSquare, Plus, Minus } from 'lucide-react';
+import { Home, ListChecks, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { TransactionDialog } from '@/components/TransactionDialog';
@@ -21,16 +21,6 @@ export default function HouseholdLayout({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<TransactionType>('expense');
 
-  const copyLink = async () => {
-    const url = `${window.location.origin}/${householdId}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('링크가 복사되었습니다!');
-    } catch {
-      toast.error('링크 복사에 실패했습니다.');
-    }
-  };
-
   const handleQuickAdd = (type: TransactionType) => {
     setTransactionType(type);
     setDialogOpen(true);
@@ -41,21 +31,6 @@ export default function HouseholdLayout({
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
-
-  const tabs = [
-    {
-      name: '가계부',
-      href: `/${householdId}`,
-      icon: Home,
-      isActive: pathname === `/${householdId}`,
-    },
-    {
-      name: '예산',
-      href: `/${householdId}/budget`,
-      icon: ListChecks,
-      isActive: pathname === `/${householdId}/budget`,
-    },
-  ];
 
   return (
     <div className="min-h-screen flex flex-col pb-16">
