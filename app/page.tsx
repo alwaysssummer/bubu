@@ -213,7 +213,7 @@ export default function HomePage() {
                             className="h-8 w-8 p-0"
                             onClick={(e) => handleCopyLink(household.id, e)}
                             title="링크 복사"
-                          >
+          >
                             <Copy className="h-4 w-4" />
                           </Button>
                           <Button

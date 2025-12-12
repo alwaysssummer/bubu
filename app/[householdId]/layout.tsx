@@ -3,8 +3,11 @@
 import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Copy, Home, ListChecks, CheckSquare, Plus } from 'lucide-react';
+import { Copy, Home, ListChecks, CheckSquare, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import { TransactionDialog } from '@/components/TransactionDialog';
+import type { TransactionType } from '@/lib/types';
 
 export default function HouseholdLayout({
   children,
@@ -15,6 +18,9 @@ export default function HouseholdLayout({
   const pathname = usePathname();
   const householdId = params.householdId as string;
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
+
   const copyLink = async () => {
     const url = `${window.location.origin}/${householdId}`;
     try {
@@ -23,6 +29,17 @@ export default function HouseholdLayout({
     } catch {
       toast.error('링크 복사에 실패했습니다.');
     }
+  };
+
+  const handleQuickAdd = (type: TransactionType) => {
+    setTransactionType(type);
+    setDialogOpen(true);
+  };
+
+  // 현재 월 가져오기
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
 
   const tabs = [
@@ -61,8 +78,25 @@ export default function HouseholdLayout({
               <span className="text-xs font-medium">가계부</span>
             </Link>
 
-            {/* Center Add Button - Will be handled by page */}
-            <div className="w-12 h-12" />
+            {/* Center Quick Add Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="default"
+                className="h-12 w-12 rounded-full shadow-lg bg-green-600 hover:bg-green-700"
+                onClick={() => handleQuickAdd('income')}
+              >
+                <Plus className="h-6 w-6" />
+              </Button>
+              <Button
+                size="icon"
+                variant="default"
+                className="h-12 w-12 rounded-full shadow-lg bg-red-600 hover:bg-red-700"
+                onClick={() => handleQuickAdd('expense')}
+              >
+                <Minus className="h-6 w-6" />
+              </Button>
+            </div>
 
             <Link
               href={`/${householdId}/budget`}
@@ -78,6 +112,16 @@ export default function HouseholdLayout({
           </div>
         </div>
       </nav>
+
+      {/* Transaction Dialog */}
+      <TransactionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        householdId={householdId}
+        transaction={null}
+        defaultMonth={getCurrentMonth()}
+        defaultType={transactionType}
+      />
     </div>
   );
 }

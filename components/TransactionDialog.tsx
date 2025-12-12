@@ -31,6 +31,7 @@ interface TransactionDialogProps {
   householdId: string;
   transaction?: Transaction | null;
   defaultMonth: string;
+  defaultType?: TransactionType;
 }
 
 export function TransactionDialog({
@@ -39,6 +40,7 @@ export function TransactionDialog({
   householdId,
   transaction,
   defaultMonth,
+  defaultType = 'expense',
 }: TransactionDialogProps) {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
@@ -57,13 +59,13 @@ export function TransactionDialog({
       setMemo(transaction.memo || '');
     } else {
       // Reset form
-      setType('expense');
+      setType(defaultType);
       setAmount('');
       setCategory('');
       setDate(new Date());
       setMemo('');
     }
-  }, [transaction, open]);
+  }, [transaction, open, defaultType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

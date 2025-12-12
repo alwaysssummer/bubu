@@ -303,7 +303,7 @@ export default function BudgetPage() {
       <Card>
         <CardContent className="px-3 py-1">
           <div className="flex items-center justify-between gap-6">
-            {/* 좌측: 월 네비게이션 */}
+            {/* 좌측: 월 네비게이션 + 예산 항목 추가 버튼 */}
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
@@ -323,6 +323,15 @@ export default function BudgetPage() {
                 onClick={goToNextMonth}
               >
                 <ChevronRight className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 ml-1"
+                onClick={handleAddNew}
+                title="예산 항목 추가"
+              >
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
 
@@ -493,15 +502,6 @@ export default function BudgetPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Center Add Button */}
-      <Button
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full shadow-lg z-50"
-        size="icon"
-        onClick={handleAddNew}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
 
       {/* Budget Item Dialog */}
       <BudgetItemDialog

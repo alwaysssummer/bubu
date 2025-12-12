@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { useTransactions } from '@/lib/hooks/useTransactions';
 import { useMonthlyBalance } from '@/lib/hooks/useMonthlyBalance';
 import { TransactionDialog } from '@/components/TransactionDialog';
@@ -102,11 +102,6 @@ export default function HouseholdPage() {
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
     setCurrentMonth(`${nextYear}-${String(nextMonth).padStart(2, '0')}`);
-  };
-
-  const handleAddNew = () => {
-    setEditingTransaction(null);
-    setDialogOpen(true);
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -454,15 +449,6 @@ export default function HouseholdPage() {
       <Suspense fallback={<CategorySkeleton />}>
         <CategoryAnalysis householdId={householdId} currentMonth={currentMonth} />
       </Suspense>
-
-      {/* Center Add Button */}
-      <Button
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full shadow-lg z-50"
-        size="icon"
-        onClick={handleAddNew}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
 
       {/* Transaction Dialog */}
       <TransactionDialog
