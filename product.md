@@ -246,6 +246,63 @@ git push origin master
 
 ---
 
+## 🌳 Git 커밋 히스토리
+
+```
+* c751cfb (HEAD -> master, origin/master) docs: Update product.md to v1.1
+│         └─ Enter key navigation 기능 문서화
+│
+* 4b1d6c4 feat: Add Enter key navigation for quick transaction input
+│         ├─ 항목 입력 후 Enter → 금액 입력 포커스
+│         ├─ 금액 입력 후 Enter → 거래 추가
+│         └─ 키보드 전용 워크플로우 구현
+│
+* 2b473a0 fix: Update Next.js to 16.1.0 (CVE-2025-66478)
+│         ├─ 보안 취약점 해결
+│         ├─ product.md 추가
+│         └─ db.md 추가
+│
+* d14fb31 fix: 사용하지 않는 import 및 변수 정리
+│
+* 403ce5b feat: 하단 탭바에 수익/지출 빠른 입력 버튼 추가
+│
+* 6d94cb0 UI: Reorganize bottom navigation
+│         └─ 할일 탭 제거, 가계부/예산 중심 네비게이션
+│
+* bd49f70 UI: Drastically reduce padding for more space
+│
+* 7ea1099 UI: Reduce padding in balance and todo sections
+│
+* 9311182 Feat: Integrate todo list into main household page
+│         ├─ 할일 목록 메인 화면 통합
+│         ├─ Enter 키로 빠른 추가
+│         └─ 인라인 수정/삭제
+│
+* 45ec6cb UI: Change transaction input order (category before amount)
+│
+* 4c6ab66 Feat: Calculate opening balance from all previous transactions
+│
+* 0de54e4 Fix: Recurring items now also carry over as (전월) when unchecked
+│
+* 5a16b47 Fix: Rewrite budget item copy logic
+│
+* 0a548cd Fix: Prevent duplicate carry-over for recurring items
+│
+* 471664f Feat: Auto-carry unchecked budget items to next month
+│
+* a533a82 Feat: Add automatic copying of recurring budget items
+│
+* 81aaeac UI: Reduce balance font size and add right padding
+│
+* 5343070 Feat: Add open in new tab button
+│
+* 894eb12 Feat: Add household list management features
+```
+
+**최근 업데이트:** 2분 전 (2025-12-19)
+
+---
+
 ## 🎯 향후 계획 (Phase 2)
 
 ### 우선순위 낮음 (MVP 아님)
