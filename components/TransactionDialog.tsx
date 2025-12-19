@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,9 @@ export function TransactionDialog({
   const [category, setCategory] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [memo, setMemo] = useState('');
+  
+  // Refs for focus management
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Load transaction data when editing
   useEffect(() => {
@@ -148,6 +151,7 @@ export function TransactionDialog({
               householdId={householdId}
               value={category}
               onChange={setCategory}
+              onEnter={() => amountInputRef.current?.focus()}
             />
           </div>
 
@@ -156,10 +160,17 @@ export function TransactionDialog({
             <Label htmlFor="amount">금액</Label>
             <div className="flex items-center gap-2">
               <Input
+                ref={amountInputRef}
                 id="amount"
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit(e as any);
+                  }
+                }}
                 placeholder="10"
                 min="1"
                 required

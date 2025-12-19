@@ -23,6 +23,7 @@ interface CategoryComboboxProps {
   householdId: string;
   value: string;
   onChange: (value: string) => void;
+  onEnter?: () => void;
 }
 
 const DEFAULT_CATEGORIES = [
@@ -42,6 +43,7 @@ export function CategoryCombobox({
   householdId,
   value,
   onChange,
+  onEnter,
 }: CategoryComboboxProps) {
   const [open, setOpen] = useState(false);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
@@ -95,6 +97,13 @@ export function CategoryCombobox({
             placeholder="항목 검색 또는 입력..."
             value={value}
             onValueChange={onChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && value) {
+                e.preventDefault();
+                setOpen(false);
+                onEnter?.();
+              }
+            }}
           />
           <CommandList>
             <CommandEmpty>
